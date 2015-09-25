@@ -15,6 +15,7 @@
  */
 
 #import "NSInvocation+OCMAdditions.h"
+#import "OCMFunctions.h"
 #import "OCMFunctionsPrivate.h"
 #import "NSMethodSignature+OCMAdditions.h"
 
@@ -41,16 +42,78 @@
 }
 
 
-- (BOOL)hasCharPointerArgument
+- (NSInvocation *)invocationByRemovingCStringsAndObject:(id)objectToExclude
 {
-    NSMethodSignature *signature = [self methodSignature];
-    for(NSUInteger i = 0; i < [signature numberOfArguments]; i++)
+    NSMethodSignature *methodSignature = self.methodSignature;
+    NSInvocation *invocationCopy = [NSInvocation invocationWithMethodSignature:methodSignature];
+    
+    id target = self.target;
+    if (target != objectToExclude)
+        invocationCopy.target = target;
+    
+    invocationCopy.selector = self.selector;
+    
+    NSUInteger numberOfArguments = methodSignature.numberOfArguments;
+    for (NSUInteger index = 2; index < numberOfArguments; index++)
     {
-        const char *argType = OCMTypeWithoutQualifiers([signature getArgumentTypeAtIndex:i]);
-        if(strcmp(argType, "*") == 0)
-            return YES;
+        const char *argumentType = [methodSignature getArgumentTypeAtIndex:index];
+        if(OCMIsObjectType(argumentType))
+        {
+            id argument;
+            [self getArgument:&argument atIndex:index];
+            if (argument != objectToExclude)
+                [invocationCopy setArgument:&argument atIndex:index];
+        }
+        else if(!OCMIsCStringType(argumentType))
+        {
+            NSUInteger argumentSize;
+            NSGetSizeAndAlignment(argumentType, &argumentSize, NULL);
+            if(argumentSize <= 1024)
+            {
+                uint8_t argument[1024];
+                [self getArgument:argument atIndex:index];
+                [invocationCopy setArgument:argument atIndex:index];
+            }
+            else
+            {
+                void *argument = malloc(argumentSize);
+                [self getArgument:argument atIndex:index];
+                [invocationCopy setArgument:argument atIndex:index];
+                free(argument);
+            }
+        }
     }
-    return NO;
+    
+    const char *returnType = methodSignature.methodReturnType;
+    if(OCMIsObjectType(returnType))
+    {
+        id returnValue;
+        [self getReturnValue:&returnValue];
+        if (returnValue != objectToExclude)
+            [invocationCopy setReturnValue:&returnValue];
+    }
+    else if(!OCMIsVoidType(returnType) && !OCMIsCStringType(returnType))
+    {
+        NSUInteger returnLength = methodSignature.methodReturnLength;
+        if(returnLength <= 1024)
+        {
+            uint8_t returnValue[1024];
+            [self getReturnValue:returnValue];
+            [invocationCopy setReturnValue:returnValue];
+        }
+        else
+        {
+            void *returnValue = malloc(returnLength);
+            [self getReturnValue:returnValue];
+            [invocationCopy setReturnValue:returnValue];
+            free(returnValue);
+        }
+    }
+    
+    if (self.argumentsRetained)
+        [invocationCopy retainArguments];
+    
+    return invocationCopy;
 }
 
 

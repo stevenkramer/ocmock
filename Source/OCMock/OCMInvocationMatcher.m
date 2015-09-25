@@ -35,18 +35,25 @@
 - (void)dealloc
 {
     [recordedInvocation release];
+    [retainedArgumentsInvocation release];
     [super dealloc];
 }
 
 - (void)setInvocation:(NSInvocation *)anInvocation
 {
     [recordedInvocation release];
-    // When the method has a char* argument we do not retain the arguments. This makes it possible
-    // to match char* args literally and with anyPointer. Not retaining the argument means that
-    // in these cases tests that use their own autorelease pools may fail unexpectedly.
-    if(![anInvocation hasCharPointerArgument])
-        [anInvocation retainArguments];
     recordedInvocation = [anInvocation retain];
+    
+    // Don't retain arguments on the invocation that we use for matching. NSInvocation effectively
+    // does an strcpy on char* arguments which messes up matching them literally and blows up with
+    // anyPointer (in strlen since it's not actually a C string). Instead keep two copies of the
+    // invocation - one for matching and one to keep the arguments alive for the lifetime of self.
+    // On the off-chance that anInvocation contains self as an argument, remove that from the
+    // invocation to make sure retaining arguments doesn't create a retain cycle.
+    NSInvocation *invocationCopy = [anInvocation invocationByRemovingCStringsAndObject:self];
+    [invocationCopy retainArguments];
+    [retainedArgumentsInvocation release];
+    retainedArgumentsInvocation = [invocationCopy retain];
 }
 
 - (void)setRecordedAsClassMethod:(BOOL)flag

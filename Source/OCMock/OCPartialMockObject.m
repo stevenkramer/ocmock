@@ -127,7 +127,7 @@
 
     /* Adding forwarder for most instance methods to allow for verify after run */
     NSArray *methodBlackList = @[@"class", @"forwardingTargetForSelector:", @"methodSignatureForSelector:", @"forwardInvocation:",
-            @"allowsWeakReference", @"retainWeakReference", @"isBlock"];
+            @"allowsWeakReference", @"retainWeakReference", @"isBlock", @"retainCount", @"retain", @"release", @"autorelease"];
     [NSObject enumerateMethodsInClass:mockedClass usingBlock:^(Class cls, SEL sel) {
         if((cls == [NSObject class]) || (cls == [NSProxy class]))
             return;

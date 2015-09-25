@@ -19,8 +19,7 @@
 @interface NSInvocation(OCMAdditions)
 
 + (NSInvocation *)invocationForBlock:(id)block withArguments:(NSArray *)arguments;
-
-- (BOOL)hasCharPointerArgument;
+- (NSInvocation *)invocationByRemovingCStringsAndObject:(id)objectToExclude;
 
 - (id)getArgumentAtIndexAsObject:(NSInteger)argIndex;
 

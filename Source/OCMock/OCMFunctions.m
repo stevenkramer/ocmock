@@ -61,6 +61,16 @@ BOOL OCMIsObjectType(const char *objCType)
     return NO;
 }
 
+BOOL OCMIsCStringType(const char *objCType)
+{
+    return *OCMTypeWithoutQualifiers(objCType) == '*';
+}
+
+BOOL OCMIsVoidType(const char *objCType)
+{
+    return *OCMTypeWithoutQualifiers(objCType) == 'v';
+}
+
 
 const char *OCMTypeWithoutQualifiers(const char *objCType)
 {
