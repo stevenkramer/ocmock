@@ -93,7 +93,7 @@
 	stubs = [[NSMutableArray alloc] init];
 	expectations = [[NSMutableArray alloc] init];
 	exceptions = [[NSMutableArray alloc] init];
-    invocations = [[NSMapTable alloc] initWithKeyOptions:NSMapTableStrongMemory valueOptions:NSMapTableStrongMemory capacity:0];
+    invocations = [[NSMapTable alloc] initWithKeyOptions:NSMapTableStrongMemory | NSMapTableObjectPointerPersonality valueOptions:NSMapTableStrongMemory capacity:0];
     return self;
 }
 
