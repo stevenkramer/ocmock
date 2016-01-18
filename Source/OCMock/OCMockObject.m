@@ -311,7 +311,9 @@
         // around after this method returns. Make a copy of anInvocation to hold onto that doesn't
         // contain any references to self.
         NSInvocation *selflessInvocation = [anInvocation invocationByRemovingCStringsAndObject:self];
-        [selflessInvocation retainArguments];
+        // unfortunately, we also can't retain any of the other arguments, because those might be calling us from their dealloc
+        // for instance, when unregistering as a listener
+        // [selflessInvocation retainArguments];
         [invocations setObject:selflessInvocation forKey:anInvocation];
     }
     
